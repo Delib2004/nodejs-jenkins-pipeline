@@ -1,0 +1,65 @@
+---
+- name: Deploy Node.js app
+  hosts: web
+  become: true
+
+  vars:
+    app_dir: /opt/nodeapp
+
+  tasks:
+    - name: Install curl
+      ansible.builtin.apt:
+        name: curl
+        state: present
+        update_cache: true
+
+    - name: Add NodeSource repo for Node 20
+      ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Install Node.js
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+
+    - name: Create app directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Upload and unpack the build artifact
+      ansible.builtin.unarchive:
+        src: ../app.tgz
+        dest: "{{ app_dir }}"
+
+    - name: Install production dependencies
+      community.general.npm:
+        path: "{{ app_dir }}"
+        production: true
+
+    - name: Create systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/nodeapp.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Node.js sample app
+          After=network.target
+
+          [Service]
+          WorkingDirectory={{ app_dir }}
+          ExecStart=/usr/bin/node app.js
+          Environment=PORT=3000
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start and enable the service
+      ansible.builtin.systemd:
+        name: nodeapp
+        state: restarted
+        enabled: true
+        daemon_reload: true
