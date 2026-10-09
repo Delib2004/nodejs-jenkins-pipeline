@@ -1,0 +1,14 @@
+{
+  "name": "nodejs-jenkins-pipeline",
+  "version": "1.0.0",
+  "description": "Sample Node.js app deployed to EC2 by a Jenkins pipeline with Ansible",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
